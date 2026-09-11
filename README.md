@@ -20,7 +20,7 @@ A simple, self-contained HTML tool for generating tiered-support blurbs for stud
 3. Enter a student name, select the relevant strategies, and choose a frequency for each.
 4. Click **Generate** to produce a blurb, then edit or copy it as needed.
 
-This tool can also be found on [GitHub Pages]([https://nicollabs.github.io/Student-Notes-Scribe/]), so others can open it directly without downloading the file.
+This tool can also be found on [GitHub Pages](https://nicollabs.github.io/Student-Notes-Scribe/), so others can open it directly without downloading the file.
 
 ## Privacy
 
