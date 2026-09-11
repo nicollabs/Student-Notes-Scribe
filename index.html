@@ -1,0 +1,1367 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Student Notes Scribe</title>
+<style>
+:root {
+  --app-navy: #13294B;
+  --app-navy-light: #2F4C7C;
+  --app-red: #F04850;
+
+  --ink: #0b0d17;
+  --muted: #50556b;
+  --bg: #f6f7fb;
+  --card: #ffffff;
+  --border: #e6e6ef;
+  --soft: #f2f3f9;
+
+  --font-sans: "Museo Sans", "Museo", "Segoe UI", Roboto, Arial, system-ui, -apple-system, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+.container {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 26px 18px 130px;
+}
+
+/* HERO */
+.hero {
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 22px rgba(11, 13, 23, 0.06);
+  background: var(--app-navy);
+}
+
+.heroInner {
+  padding: 22px 20px;
+  color: white;
+}
+
+.heroTitleRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
+  align-items: start;
+}
+
+.heroControls {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 999px;
+  font-weight: 650;
+  font-size: 12px;
+  background: rgba(47, 76, 124, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: white;
+}
+
+.heroTitle {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 750;
+  letter-spacing: -0.3px;
+  line-height: 1.1;
+}
+
+.heroSub {
+  margin: 10px 0 0;
+  opacity: 0.92;
+  font-size: 14px;
+  line-height: 1.45;
+  font-weight: 400;
+}
+
+/* Chips */
+.chip {
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
+  border-radius: 999px;
+  padding: 8px 10px;
+  font-weight: 650;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.chip:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.22);
+}
+
+.chipOn {
+  background: var(--app-navy-light);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+.chipDanger {
+  background: var(--app-red);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+/* Card */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 10px 22px rgba(11, 13, 23, 0.05);
+}
+
+.sectionTitle {
+  margin: 18px 0 12px;
+  font-size: 18px;
+  font-weight: 650;
+}
+
+.inputRow,
+.searchRow {
+  display: grid;
+  gap: 8px;
+}
+
+.searchRow {
+  margin-top: 14px;
+}
+
+.label {
+  font-weight: 600;
+}
+
+.smallLabel {
+  display: block;
+  font-weight: 600;
+  font-size: 12px;
+  margin-bottom: 6px;
+  color: var(--ink);
+}
+
+.textInput {
+  width: 100%;
+  padding: 12px 12px;
+  font-size: 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  outline: none;
+  background: white;
+  font-family: var(--font-sans);
+}
+
+.textInput:focus {
+  border-color: rgba(47, 76, 124, 0.85);
+  box-shadow: 0 0 0 4px rgba(47, 76, 124, 0.14);
+}
+
+/* Custom add box */
+.customBox {
+  margin-top: 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px;
+  background: #fff;
+}
+
+.customTitle {
+  font-weight: 650;
+  margin-bottom: 10px;
+}
+
+.customGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 2fr auto;
+  gap: 10px;
+  align-items: end;
+}
+
+@media (max-width: 920px) {
+  .customGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .heroTitleRow {
+    grid-template-columns: 1fr;
+  }
+
+  .heroControls {
+    justify-content: flex-start;
+  }
+}
+
+/* Collapsibles */
+.tierDetails {
+  margin-top: 14px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: white;
+  box-shadow: 0 10px 22px rgba(11, 13, 23, 0.04);
+}
+
+.tierSummary {
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+  padding: 14px 44px 14px 16px;
+  display: flex;
+  align-items: center;
+  font-weight: 650;
+  font-size: 16px;
+  color: white;
+  position: relative;
+}
+
+.tierSummary::-webkit-details-marker {
+  display: none;
+}
+
+.tierSummary::after {
+  content: "▾";
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  line-height: 1;
+  opacity: 0.95;
+}
+
+.tierDetails[open] > .tierSummary::after {
+  content: "▴";
+}
+
+.tierTealSummary {
+  background: var(--app-navy-light);
+  color: #ffffff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.teacherAideSummary {
+  background: var(--app-red);
+  color: white;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.tierBody {
+  padding: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 920px) {
+  .grid3,
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.domainTitle {
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 3px solid var(--soft);
+  font-weight: 650;
+}
+
+/* Strategy cards */
+.strategyItem {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #ffffff;
+  margin-bottom: 12px;
+}
+
+.strategyItemChecked {
+  border-color: rgba(47, 76, 124, 0.65);
+  box-shadow: 0 0 0 4px rgba(47, 76, 124, 0.1);
+}
+
+.strategyRow {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+/* Horizontal edit rail */
+.editRailHorizontal {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  padding-top: 2px;
+}
+
+.editIcon {
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 10px;
+  padding: 6px 8px;
+  font-weight: 650;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.editIcon:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(47, 76, 124, 0.12);
+  border-color: rgba(47, 76, 124, 0.55);
+}
+
+.editIconDanger {
+  border-color: rgba(240, 72, 80, 0.45);
+}
+
+.strategyMain {
+  display: grid;
+  gap: 10px;
+}
+
+.strategyLabel {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  line-height: 1.4;
+  font-size: 14px;
+  cursor: default;
+  font-weight: 400;
+}
+
+.checkbox {
+  margin-top: 3px;
+  transform: scale(1.08);
+  accent-color: var(--app-navy-light);
+}
+
+.strategyText {
+  font-weight: 400;
+}
+
+/* Frequency */
+.freqBlock {
+  margin-top: 0;
+  margin-left: 26px;
+}
+
+.freqLabel {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.select {
+  width: 100%;
+  padding: 10px 10px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  outline: none;
+  background: white;
+  font-family: var(--font-sans);
+}
+
+.select:focus {
+  border-color: rgba(47, 76, 124, 0.85);
+  box-shadow: 0 0 0 4px rgba(47, 76, 124, 0.12);
+}
+
+.selectNeeds {
+  border-color: rgba(240, 72, 80, 0.85);
+  box-shadow: 0 0 0 4px rgba(240, 72, 80, 0.1);
+}
+
+/* Hidden drawer */
+.hiddenDrawer {
+  margin-top: 10px;
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  padding: 10px;
+  background: #fff;
+}
+
+.hiddenSummary {
+  cursor: pointer;
+  font-weight: 600;
+  list-style: none;
+}
+
+.hiddenSummary::-webkit-details-marker {
+  display: none;
+}
+
+.hiddenList {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.hiddenRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.hiddenText {
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 400;
+}
+
+/* Buttons */
+.button {
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font-sans);
+}
+
+.button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(47, 76, 124, 0.12);
+  border-color: rgba(47, 76, 124, 0.55);
+}
+
+.buttonPrimary {
+  background: var(--app-navy-light);
+  border-color: rgba(47, 76, 124, 0.55);
+  color: #ffffff;
+}
+
+.buttonAccent {
+  background: var(--app-red);
+  border-color: rgba(240, 72, 80, 0.55);
+  color: white;
+}
+
+.buttonGhost {
+  background: white;
+  border-color: var(--border);
+  color: var(--ink);
+}
+
+.button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Output */
+.outputCard {
+  margin-top: 16px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  background: white;
+  box-shadow: 0 10px 22px rgba(11, 13, 23, 0.05);
+}
+
+.outputHeader {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  background: var(--app-navy);
+  color: white;
+}
+
+.outputTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.outputBody {
+  padding: 16px;
+}
+
+.outputArea {
+  width: 100%;
+  padding: 14px;
+  font-size: 15px;
+  line-height: 1.55;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  outline: none;
+  resize: vertical;
+  min-height: 140px;
+  background: #ffffff;
+  font-family: var(--font-sans);
+  font-weight: 400;
+}
+
+.charWarning {
+  margin-top: 6px;
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--app-red);
+  font-weight: 600;
+}
+
+/* Sticky bar */
+.stickyBar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(246, 247, 251, 0.92);
+  backdrop-filter: blur(6px);
+  border-top: 1px solid var(--border);
+  padding: 10px 12px;
+  z-index: 999;
+}
+
+@supports not (backdrop-filter: blur(6px)) {
+  .stickyBar {
+    background: rgb(246, 247, 251);
+  }
+}
+
+.stickyInner {
+  max-width: 920px;
+  margin: 0 auto;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 6px;
+}
+
+.countPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 999px;
+  background: white;
+  border: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.needsPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(240, 72, 80, 0.1);
+  border: 1px solid rgba(240, 72, 80, 0.28);
+  color: #8b1f26;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.stickyActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ============================ DATA ============================ */
+
+  var frequencies = [
+    "Once a lesson",
+    "Multiple times a lesson",
+    "Once a week",
+    "Once a fortnight",
+    "At the start of a term",
+    "Once a term",
+    "When dysregulated",
+    "As needed"
+  ];
+
+  var TIERS = ["Tier 1", "Tier 2", "Tier 3"];
+  var CORE_DOMAINS = ["Engagement", "Learning", "Wellbeing"];
+  var PARTNER_DOMAINS = ["Teacher Aide Support", "Collaborative Teaching Support"];
+
+  var tierLabels = {
+    "Tier 1": "Tier 1 (Universal - 80%)",
+    "Tier 2": "Tier 2 (Targeted - 15%)",
+    "Tier 3": "Tier 3 (Intensive - 5%)"
+  };
+
+  var strategies = [
+    { id: "t1_eng_choice_seating", tier: "Tier 1", domain: "Engagement", text: "student given choice in seating to support comfort and focus" },
+    { id: "t1_eng_brain_breaks", tier: "Tier 1", domain: "Engagement", text: "movement or brain breaks provided" },
+    { id: "t1_eng_minimise_digital", tier: "Tier 1", domain: "Engagement", text: "digital distractions minimised during tasks" },
+    { id: "t1_eng_quiet_spaces", tier: "Tier 1", domain: "Engagement", text: "access to breakout or quiet spaces provided to support focus" },
+    { id: "t1_eng_interest_based_choice", tier: "Tier 1", domain: "Engagement", text: "choice in topic for interest based learning provided" },
+
+    { id: "t1_learn_chunked_instructions", tier: "Tier 1", domain: "Learning", text: "instructions chunked and simplified" },
+    { id: "t1_learn_assistive_tech", tier: "Tier 1", domain: "Learning", text: "use of assistive technology supported" },
+    { id: "t1_access_to_worked_examples", tier: "Tier 1", domain: "Learning", text: "access to worked examples provided" },
+    { id: "t1_learn_sentence_starters", tier: "Tier 1", domain: "Learning", text: "sentence starters provided" },
+    { id: "t1_learn_graphic_organisers", tier: "Tier 1", domain: "Learning", text: "graphic organisers provided" },
+    { id: "t1_learn_vocabulary_banks", tier: "Tier 1", domain: "Learning", text: "vocabulary banks provided" },
+    { id: "t1_learn_individual_modelling", tier: "Tier 1", domain: "Learning", text: "individual modelling provided" },
+
+    { id: "t1_well_positive_ack", tier: "Tier 1", domain: "Wellbeing", text: "positive behaviour acknowledged" },
+    { id: "t1_well_time_regulate", tier: "Tier 1", domain: "Wellbeing", text: "time given to regulate emotions" },
+    { id: "t1_well_takeup_time", tier: "Tier 1", domain: "Wellbeing", text: "take-up time provided before redirection" },
+    { id: "t1_well_connect_before", tier: "Tier 1", domain: "Wellbeing", text: "connect-before-correct approach used" },
+    { id: "t1_well_updates_home", tier: "Tier 1", domain: "Wellbeing", text: "positive updates sent home" },
+    { id: "t1_well_rest_breaks", tier: "Tier 1", domain: "Wellbeing", text: "rest breaks provided" },
+    { id: "t1_well_checkin_staff", tier: "Tier 1", domain: "Wellbeing", text: "check-in provided by staff" },
+
+    { id: "t2_eng_near_peer_teacher", tier: "Tier 2", domain: "Engagement", text: "student seated near teacher for prompts" },
+    { id: "t2_eng_prompt_breaks", tier: "Tier 2", domain: "Engagement", text: "student prompted to take movement or brain breaks" },
+    { id: "t2_eng_nonverbal_cue_system", tier: "Tier 2", domain: "Engagement", text: "individualised non-verbal cue system used" },
+    { id: "t2_eng_visual_routines_ind", tier: "Tier 2", domain: "Engagement", text: "individualised visual routines used and referred to" },
+    { id: "t2_eng_guided_device", tier: "Tier 2", domain: "Engagement", text: "guided access to digital device during tasks" },
+    { id: "t2_eng_peer_tutoring", tier: "Tier 2", domain: "Engagement", text: "peer tutoring used" },
+
+    { id: "t2_learn_sentence_scaffolds", tier: "Tier 2", domain: "Learning", text: "writing supported with sentence scaffolds" },
+    { id: "t2_learn_goals_reviewed", tier: "Tier 2", domain: "Learning", text: "individual learning goals set and reviewed" },
+    { id: "t2_learn_guided_notes_rubrics", tier: "Tier 2", domain: "Learning", text: "guided note-taking and scaffolded rubrics used" },
+    { id: "t2_learn_additional_time", tier: "Tier 2", domain: "Learning", text: "additional time provided" },
+    { id: "t2_learn_ability_grouping", tier: "Tier 2", domain: "Learning", text: "ability grouping used" },
+    { id: "t2_learn_scaffolded_structures", tier: "Tier 2", domain: "Learning", text: "scaffolded structures provided" },
+
+    { id: "t2_well_mentoring", tier: "Tier 2", domain: "Wellbeing", text: "staff mentoring provided" },
+    { id: "t2_well_transitions", tier: "Tier 2", domain: "Wellbeing", text: "support provided during transitions" },
+    { id: "t2_well_break_card", tier: "Tier 2", domain: "Wellbeing", text: "break card used" },
+    { id: "t2_well_updates_shared", tier: "Tier 2", domain: "Wellbeing", text: "regular wellbeing updates shared" },
+    { id: "t2_well_family_collab", tier: "Tier 2", domain: "Wellbeing", text: "family collaboration used to support the student" },
+    { id: "t2_well_selfreg_adult", tier: "Tier 2", domain: "Wellbeing", text: "self-regulation explicitly taught with adult support" },
+    { id: "t2_well_sensory_tools", tier: "Tier 2", domain: "Wellbeing", text: "sensory tools used" },
+
+    { id: "t3_eng_direct_monitoring", tier: "Tier 3", domain: "Engagement", text: "student seated for direct adult monitoring" },
+    { id: "t3_eng_safety_plan_ta", tier: "Tier 3", domain: "Engagement", text: "safety plan implemented with teacher aide support" },
+    { id: "t3_eng_hand_over_hand", tier: "Tier 3", domain: "Engagement", text: "hand over hand prompting used" },
+    { id: "t3_eng_functional_behaviour", tier: "Tier 3", domain: "Engagement", text: "functional behaviour strategies implemented" },
+    { id: "t3_eng_alt_env_planned", tier: "Tier 3", domain: "Engagement", text: "planned use of alternative learning environments to support focus" },
+
+    { id: "t3_learn_icp_modified", tier: "Tier 3", domain: "Learning", text: "ICP implemented with modified outcomes" },
+    { id: "t3_learn_intensive_lit_num", tier: "Tier 3", domain: "Learning", text: "intensive literacy/numeracy interventions provided" },
+    { id: "t3_learn_1to1_initiation", tier: "Tier 3", domain: "Learning", text: "1:1 adult support provided for task initiation and completion" },
+    { id: "t3_learn_microsteps_prompting", tier: "Tier 3", domain: "Learning", text: "tasks broken into micro-steps with regular prompting" },
+    { id: "t3_learn_adjusted_assess_checkins", tier: "Tier 3", domain: "Learning", text: "adjusted assessments used with check-ins" },
+    { id: "t3_learn_specialised_at", tier: "Tier 3", domain: "Learning", text: "specialised and individualised assistive technology used" },
+    { id: "t3_learn_school_specialist_staff", tier: "Tier 3", domain: "Learning", text: "collaboration with school specialist staff" },
+    { id: "t3_learn_avt_therapist_external", tier: "Tier 3", domain: "Learning", text: "collaboration with AVT, therapist and external specialists" },
+
+    { id: "t3_well_adjusted_routine", tier: "Tier 3", domain: "Wellbeing", text: "routine adjusted to increase predictability" },
+    { id: "t3_well_family_comm_schedule", tier: "Tier 3", domain: "Wellbeing", text: "family communication schedule implemented" },
+    { id: "t3_well_case_meetings", tier: "Tier 3", domain: "Wellbeing", text: "case meetings held with family and wellbeing team" },
+    { id: "t3_well_coregulation", tier: "Tier 3", domain: "Wellbeing", text: "co-regulation provided with adult support" },
+    { id: "t3_well_ind_wellbeing_plan", tier: "Tier 3", domain: "Wellbeing", text: "individualised wellbeing plan followed" },
+    { id: "t3_well_escalation_profile", tier: "Tier 3", domain: "Wellbeing", text: "escalation profile strategies implemented" },
+
+    { id: "ta_prompt_to_task", tier: "Tier 2", domain: "Teacher Aide Support", text: "prompting to task provided", optional: true },
+    { id: "ta_small_group", tier: "Tier 2", domain: "Teacher Aide Support", text: "work with small group of students provided", optional: true },
+    { id: "ta_station_teaching", tier: "Tier 2", domain: "Teacher Aide Support", text: "station teaching support provided", optional: true },
+    { id: "ta_differentiated_task", tier: "Tier 2", domain: "Teacher Aide Support", text: "assistance with differentiated task provided", optional: true },
+    { id: "ta_reword_instructions", tier: "Tier 2", domain: "Teacher Aide Support", text: "rewording of instructions and tasks provided", optional: true },
+    { id: "ta_modelling_skill", tier: "Tier 2", domain: "Teacher Aide Support", text: "modelling use or skill provided", optional: true },
+    { id: "ta_social_facilitator", tier: "Tier 2", domain: "Teacher Aide Support", text: "social facilitator support provided for group work", optional: true },
+    { id: "ta_on_task_monitoring", tier: "Tier 2", domain: "Teacher Aide Support", text: "monitoring on-task behaviour provided", optional: true },
+    { id: "ta_preteach_vocab", tier: "Tier 2", domain: "Teacher Aide Support", text: "pre-teaching vocabulary provided", optional: true },
+    { id: "ta_scribe", tier: "Tier 2", domain: "Teacher Aide Support", text: "scribe support provided", optional: true },
+    { id: "ta_reformat_task", tier: "Tier 2", domain: "Teacher Aide Support", text: "reformatting of task provided", optional: true },
+
+    { id: "ct_coplanning", tier: "Tier 2", domain: "Collaborative Teaching Support", text: "co-planning", optional: true },
+    { id: "ct_codebriefing", tier: "Tier 2", domain: "Collaborative Teaching Support", text: "co-debriefing", optional: true },
+    { id: "ct_1lead_1assist", tier: "Tier 2", domain: "Collaborative Teaching Support", text: "1 lead, 1 assist", optional: true },
+    { id: "ct_station_teaching", tier: "Tier 2", domain: "Collaborative Teaching Support", text: "station teaching", optional: true },
+    { id: "ct_parallel_teaching", tier: "Tier 2", domain: "Collaborative Teaching Support", text: "parallel teaching", optional: true },
+    { id: "ct_alternative_teaching", tier: "Tier 2", domain: "Collaborative Teaching Support", text: "alternative teaching", optional: true },
+    { id: "ct_team_teaching", tier: "Tier 2", domain: "Collaborative Teaching Support", text: "team teaching", optional: true }
+  ];
+
+  /* ============================ STORAGE ============================ */
+
+  var STORAGE_KEY = "student_notes_scribe_prefs_v1";
+
+  function hasLocalStorage() {
+    try { return typeof localStorage !== "undefined"; } catch (e) { return false; }
+  }
+
+  function makeBucketKey(tier, domain) { return tier + "|" + domain; }
+
+  function defaultPrefs() {
+    return { version: 1, hidden: {}, order: {}, custom: [], updatedAt: Date.now() };
+  }
+
+  function coercePrefs(raw) {
+    if (!raw || typeof raw !== "object") return defaultPrefs();
+    if (raw.version !== 1) return defaultPrefs();
+    return {
+      version: 1,
+      hidden: raw.hidden && typeof raw.hidden === "object" ? raw.hidden : {},
+      order: raw.order && typeof raw.order === "object" ? raw.order : {},
+      custom: Array.isArray(raw.custom) ? raw.custom : [],
+      updatedAt: typeof raw.updatedAt === "number" ? raw.updatedAt : Date.now()
+    };
+  }
+
+  function loadPrefs() {
+    if (!hasLocalStorage()) return defaultPrefs();
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return defaultPrefs();
+      return coercePrefs(JSON.parse(raw));
+    } catch (e) {
+      return defaultPrefs();
+    }
+  }
+
+  function savePrefs(prefs) {
+    var next = Object.assign({}, prefs, { updatedAt: Date.now() });
+    if (hasLocalStorage()) {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch (e) {}
+    }
+    return next;
+  }
+
+  function resetPrefsStorage() {
+    if (!hasLocalStorage()) return;
+    try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+  }
+
+  /* ============================ BLURB GENERATION ============================ */
+
+  function joinWithCommasAnd(items) {
+    if (items.length === 0) return "";
+    if (items.length === 1) return items[0];
+    if (items.length === 2) return items[0] + " and " + items[1];
+    return items.slice(0, -1).join(", ") + ", and " + items[items.length - 1];
+  }
+
+  function hasChosenFrequency(v) { return typeof v === "string" && v.length > 0; }
+
+  function possessiveLabel(studentName, index) {
+    return index % 2 === 0 ? studentName + "'s" : "their";
+  }
+
+  function generateBlurb(studentName, allStrategiesList, selected) {
+    var engagement = [], learning = [], wellbeing = [], teacherAideSupport = [], collaborativeTeachingSupport = [];
+
+    for (var i = 0; i < allStrategiesList.length; i++) {
+      var s = allStrategiesList[i];
+      var choice = selected[s.id];
+      if (!hasChosenFrequency(choice)) continue;
+
+      var freqLower = choice.toLowerCase();
+      var phrase = s.text.trim() + ", " + freqLower;
+
+      if (s.domain === "Engagement") engagement.push(phrase);
+      else if (s.domain === "Learning") learning.push(phrase);
+      else if (s.domain === "Wellbeing") wellbeing.push(phrase);
+      else if (s.domain === "Teacher Aide Support") teacherAideSupport.push(phrase);
+      else if (s.domain === "Collaborative Teaching Support") collaborativeTeachingSupport.push(phrase);
+    }
+
+    var parts = [];
+    var idx = 0;
+
+    if (engagement.length) {
+      parts.push("To support " + possessiveLabel(studentName, idx) + " engagement, strategies included " + joinWithCommasAnd(engagement) + ".");
+      idx++;
+    }
+    if (learning.length) {
+      parts.push("To support " + possessiveLabel(studentName, idx) + " learning, strategies included " + joinWithCommasAnd(learning) + ".");
+      idx++;
+    }
+    if (wellbeing.length) {
+      parts.push("To support " + possessiveLabel(studentName, idx) + " wellbeing, strategies included " + joinWithCommasAnd(wellbeing) + ".");
+      idx++;
+    }
+    if (teacherAideSupport.length) {
+      parts.push("Teacher aide support included " + joinWithCommasAnd(teacherAideSupport) + ".");
+    }
+    if (collaborativeTeachingSupport.length) {
+      parts.push("Collaborative teaching support included " + joinWithCommasAnd(collaborativeTeachingSupport) + ".");
+    }
+
+    return parts.join(" ");
+  }
+
+  /* ============================ STATE ============================ */
+
+  var state = {
+    studentName: "",
+    selected: {},
+    blurbDraft: "",
+    query: "",
+    editMode: false,
+    prefs: loadPrefs(),
+    customTier: "Tier 1",
+    customDomain: "Engagement",
+    customText: "",
+    openSections: { "tier:Tier 1": true }
+  };
+
+  function allStrategies() {
+    return strategies.concat(state.prefs.custom || []);
+  }
+
+  function updatePrefs(newPrefs) {
+    state.prefs = savePrefs(newPrefs);
+  }
+
+  function isCustomId(id) { return id.indexOf("c_") === 0; }
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  /* ============================ DERIVED HELPERS ============================ */
+
+  function getHiddenSet(bucket) {
+    return new Set(state.prefs.hidden[bucket] || []);
+  }
+
+  function orderedVisibleStrategies(tier, domain) {
+    var bucket = makeBucketKey(tier, domain);
+    var hidden = getHiddenSet(bucket);
+    var q = state.query.trim().toLowerCase();
+
+    var candidates = allStrategies().filter(function (s) {
+      return s.tier === tier && s.domain === domain && !hidden.has(s.id) && (!q || s.text.toLowerCase().indexOf(q) !== -1);
+    });
+
+    var byId = new Map(candidates.map(function (s) { return [s.id, s]; }));
+    var order = state.prefs.order[bucket] || [];
+    var result = [];
+
+    order.forEach(function (id) {
+      var item = byId.get(id);
+      if (item) { result.push(item); byId.delete(id); }
+    });
+    byId.forEach(function (item) { result.push(item); });
+
+    return result;
+  }
+
+  function hiddenStrategies(tier, domain) {
+    var bucket = makeBucketKey(tier, domain);
+    var hiddenIds = getHiddenSet(bucket);
+    return allStrategies()
+      .filter(function (s) { return s.tier === tier && s.domain === domain && hiddenIds.has(s.id); })
+      .sort(function (a, b) { return a.text.localeCompare(b.text); });
+  }
+
+  function getBucketIds(tier, domain) {
+    return allStrategies().filter(function (s) { return s.tier === tier && s.domain === domain; }).map(function (s) { return s.id; });
+  }
+
+  function selectedCount() {
+    return Object.keys(state.selected).filter(function (k) { return !!state.selected[k]; }).length;
+  }
+
+  function missingFrequencyCount() {
+    return Object.keys(state.selected).filter(function (k) { return state.selected[k] === ""; }).length;
+  }
+
+  /* ============================ ACTIONS ============================ */
+
+  function setEditMode(v) { state.editMode = v; render(); }
+
+  function toggleStrategy(id, checked) {
+    var next = Object.assign({}, state.selected);
+    next[id] = checked ? "" : null;
+    state.selected = next;
+    render();
+  }
+
+  function setFrequency(id, freq) {
+    state.selected = Object.assign({}, state.selected);
+    state.selected[id] = freq;
+    render();
+  }
+
+  function scrollToOutput() {
+    setTimeout(function () {
+      var el = document.getElementById("outputSection");
+      if (el && typeof el.scrollIntoView === "function") el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 0);
+  }
+
+  function scrollToTop() {
+    setTimeout(function () { window.scrollTo({ top: 0, behavior: "smooth" }); }, 0);
+  }
+
+  function onGenerate() {
+    var name = state.studentName.trim();
+    if (!name) { alert("Please enter a student name."); return; }
+
+    var missing = missingFrequencyCount();
+    if (missing > 0) {
+      alert("Please select a frequency for " + missing + " checked strategy/strategies.");
+      return;
+    }
+
+    if (selectedCount() === 0) { alert("Please select at least one strategy."); return; }
+
+    state.blurbDraft = generateBlurb(name, allStrategies(), state.selected);
+    render();
+    scrollToOutput();
+  }
+
+  function fallbackCopyText(text) {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.left = "-9999px";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try { document.execCommand("copy"); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+
+  function copyBlurb() {
+    if (!state.blurbDraft) return;
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(state.blurbDraft).then(function () {
+        alert("Copied to clipboard.");
+      }).catch(function () {
+        fallbackCopyText(state.blurbDraft);
+        alert("Copied to clipboard.");
+      });
+    } else {
+      fallbackCopyText(state.blurbDraft);
+      alert("Copied to clipboard.");
+    }
+  }
+
+  function clearForm() {
+    state.studentName = "";
+    state.selected = {};
+    state.blurbDraft = "";
+    state.query = "";
+    render();
+    scrollToTop();
+  }
+
+  function hideStrategy(tier, domain, id) {
+    var bucket = makeBucketKey(tier, domain);
+
+    if (state.selected[id] !== undefined) {
+      var next = Object.assign({}, state.selected);
+      next[id] = null;
+      state.selected = next;
+    }
+
+    var current = new Set(state.prefs.hidden[bucket] || []);
+    current.add(id);
+    var nextHidden = Object.assign({}, state.prefs.hidden);
+    nextHidden[bucket] = Array.from(current);
+    updatePrefs(Object.assign({}, state.prefs, { hidden: nextHidden }));
+    render();
+  }
+
+  function ensureOrderContains(bucket, id) {
+    var current = state.prefs.order[bucket] || [];
+    if (current.indexOf(id) !== -1) return;
+    var nextOrder = Object.assign({}, state.prefs.order);
+    nextOrder[bucket] = current.concat([id]);
+    updatePrefs(Object.assign({}, state.prefs, { order: nextOrder }));
+  }
+
+  function restoreStrategy(tier, domain, id) {
+    var bucket = makeBucketKey(tier, domain);
+    var current = new Set(state.prefs.hidden[bucket] || []);
+    current.delete(id);
+    var nextHidden = Object.assign({}, state.prefs.hidden);
+    nextHidden[bucket] = Array.from(current);
+    updatePrefs(Object.assign({}, state.prefs, { hidden: nextHidden }));
+    ensureOrderContains(bucket, id);
+    render();
+  }
+
+  function moveInOrder(tier, domain, id, direction) {
+    var bucket = makeBucketKey(tier, domain);
+    var allIds = getBucketIds(tier, domain);
+    var existing = state.prefs.order[bucket] || [];
+
+    var full = existing.filter(function (x) { return allIds.indexOf(x) !== -1; })
+      .concat(allIds.filter(function (x) { return existing.indexOf(x) === -1; }));
+
+    var idx = full.indexOf(id);
+    if (idx === -1) return;
+
+    var swapWith = direction === "up" ? idx - 1 : idx + 1;
+    if (swapWith < 0 || swapWith >= full.length) return;
+
+    var copy = full.slice();
+    var tmp = copy[idx];
+    copy[idx] = copy[swapWith];
+    copy[swapWith] = tmp;
+
+    var nextOrder = Object.assign({}, state.prefs.order);
+    nextOrder[bucket] = copy;
+    updatePrefs(Object.assign({}, state.prefs, { order: nextOrder }));
+    render();
+  }
+
+  function addCustomCard() {
+    var text = state.customText.trim();
+    if (!text) { alert("Please enter text for the custom card."); return; }
+
+    var id = "c_" + Date.now();
+    var newCard = { id: id, tier: state.customTier, domain: state.customDomain, text: text, optional: true };
+    var bucket = makeBucketKey(state.customTier, state.customDomain);
+
+    var nextCustom = (state.prefs.custom || []).concat([newCard]);
+    var nextOrder = Object.assign({}, state.prefs.order);
+    nextOrder[bucket] = (nextOrder[bucket] || []).concat([id]);
+
+    updatePrefs(Object.assign({}, state.prefs, { custom: nextCustom, order: nextOrder }));
+    state.customText = "";
+    render();
+  }
+
+  function editCustomCard(cardId) {
+    var card = state.prefs.custom.find(function (c) { return c.id === cardId; });
+    if (!card) return;
+
+    var nextText = prompt("Edit custom strategy text:", card.text);
+    if (nextText === null) return;
+
+    var trimmed = nextText.trim();
+    if (!trimmed) { alert("Text cannot be empty."); return; }
+
+    var nextCustom = state.prefs.custom.map(function (c) {
+      return c.id === cardId ? Object.assign({}, c, { text: trimmed }) : c;
+    });
+    updatePrefs(Object.assign({}, state.prefs, { custom: nextCustom }));
+    render();
+  }
+
+  function deleteCustomCard(cardId) {
+    var card = state.prefs.custom.find(function (c) { return c.id === cardId; });
+    if (!card) return;
+
+    var ok = confirm("Delete this custom card?");
+    if (!ok) return;
+
+    var bucket = makeBucketKey(card.tier, card.domain);
+
+    if (state.selected[cardId] !== undefined) {
+      var next = Object.assign({}, state.selected);
+      delete next[cardId];
+      state.selected = next;
+    }
+
+    var nextCustom = state.prefs.custom.filter(function (c) { return c.id !== cardId; });
+    var nextHidden = Object.assign({}, state.prefs.hidden);
+    var nextOrder = Object.assign({}, state.prefs.order);
+    nextHidden[bucket] = (nextHidden[bucket] || []).filter(function (id) { return id !== cardId; });
+    nextOrder[bucket] = (nextOrder[bucket] || []).filter(function (id) { return id !== cardId; });
+
+    updatePrefs(Object.assign({}, state.prefs, { custom: nextCustom, hidden: nextHidden, order: nextOrder }));
+    render();
+  }
+
+  function storeNow() {
+    updatePrefs(state.prefs);
+    alert("Saved.");
+  }
+
+  function resetToDefault() {
+    var ok = confirm("Reset your interface to default? This clears hidden/reorder/custom settings on this device.");
+    if (!ok) return;
+
+    resetPrefsStorage();
+    state.prefs = loadPrefs();
+    state.studentName = "";
+    state.selected = {};
+    state.blurbDraft = "";
+    state.query = "";
+    render();
+    scrollToTop();
+  }
+
+  /* ============================ RENDERING ============================ */
+
+  function renderStrategyCard(s, tier, domain) {
+    var choice = state.selected[s.id];
+    var isChecked = choice !== null && choice !== undefined;
+    var needsFreq = isChecked && choice === "";
+    var showMoveControls = domain === "Engagement" || domain === "Learning" || domain === "Wellbeing";
+    var isCustom = isCustomId(s.id);
+
+    var editRail = "";
+    if (state.editMode) {
+      var moveButtons = showMoveControls
+        ? '<button class="editIcon" type="button" title="Move up" data-action="move-up" data-id="' + s.id + '" data-tier="' + tier + '" data-domain="' + domain + '">\u2191</button>' +
+          '<button class="editIcon" type="button" title="Move down" data-action="move-down" data-id="' + s.id + '" data-tier="' + tier + '" data-domain="' + domain + '">\u2193</button>'
+        : "";
+      var customButtons = isCustom
+        ? '<button class="editIcon" type="button" title="Edit" data-action="edit-card" data-id="' + s.id + '">\u270E</button>' +
+          '<button class="editIcon editIconDanger" type="button" title="Delete" data-action="delete-card" data-id="' + s.id + '">\uD83D\uDDD1</button>'
+        : "";
+      editRail = '<div class="editRailHorizontal">' + moveButtons + customButtons +
+        '<button class="editIcon editIconDanger" type="button" title="Hide" data-action="hide" data-id="' + s.id + '" data-tier="' + tier + '" data-domain="' + domain + '">\u2715</button>' +
+        '</div>';
+    }
+
+    var checkboxHtml = !state.editMode
+      ? '<input class="checkbox" type="checkbox" id="chk-' + s.id + '" data-action="toggle" data-id="' + s.id + '"' + (isChecked ? " checked" : "") + ">"
+      : "";
+
+    var freqBlock = "";
+    if (!state.editMode && isChecked) {
+      var options = '<option value="">Select frequency\u2026</option>' + frequencies.map(function (f) {
+        return '<option value="' + escapeHtml(f) + '"' + (choice === f ? " selected" : "") + ">" + escapeHtml(f) + "</option>";
+      }).join("");
+      freqBlock = '<div class="freqBlock"><label class="freqLabel">Frequency</label>' +
+        '<select class="select' + (needsFreq ? " selectNeeds" : "") + '" id="freq-' + s.id + '" data-action="set-freq" data-id="' + s.id + '">' + options + "</select></div>";
+    }
+
+    return '<div class="strategyItem' + (!state.editMode && isChecked ? " strategyItemChecked" : "") + '">' +
+      '<div class="strategyRow">' + editRail +
+      '<div class="strategyMain"><label class="strategyLabel">' + checkboxHtml +
+      '<span class="strategyText">' + escapeHtml(s.text) + "</span></label>" + freqBlock + "</div></div></div>";
+  }
+
+  function renderHiddenDrawer(domain, hidden, openKey) {
+    if (!state.editMode || hidden.length === 0) return "";
+    var rows = hidden.map(function (s) {
+      return '<div class="hiddenRow"><div class="hiddenText">' + escapeHtml(s.text) + '</div>' +
+        '<button class="button buttonGhost" type="button" data-action="restore" data-id="' + s.id + '" data-tier="' + s.tier + '" data-domain="' + domain + '">Restore</button></div>';
+    }).join("");
+    var openAttr = state.openSections[openKey] ? " open" : "";
+    return '<details class="hiddenDrawer" data-open-key="' + openKey + '"' + openAttr + '><summary class="hiddenSummary">Hidden (' + hidden.length + ')</summary>' +
+      '<div class="hiddenList">' + rows + "</div></details>";
+  }
+
+  function renderDomainColumn(tier, domain) {
+    var visible = orderedVisibleStrategies(tier, domain);
+    var hidden = hiddenStrategies(tier, domain);
+    var hiddenOpenKey = "hidden:" + tier + "|" + domain;
+    return '<div><h4 class="domainTitle">' + escapeHtml(domain) + "</h4>" +
+      visible.map(function (s) { return renderStrategyCard(s, tier, domain); }).join("") +
+      renderHiddenDrawer(domain, hidden, hiddenOpenKey) + "</div>";
+  }
+
+  function buildAppHTML() {
+    var editModeControls = !state.editMode
+      ? '<button class="chip chipOn" type="button" data-action="edit-toggle">Edit interface</button>'
+      : '<span class="statusPill">Editing mode</span>' +
+        '<button class="chip" type="button" data-action="store">Store</button>' +
+        '<button class="chip chipDanger" type="button" data-action="reset">Reset</button>' +
+        '<button class="chip" type="button" data-action="edit-off">Turn off</button>';
+
+    var header = '<header class="hero"><div class="heroInner"><div class="heroTitleRow">' +
+      '<h1 class="heroTitle">Student Notes Scribe</h1>' +
+      '<div class="heroControls">' + editModeControls + "</div></div>" +
+      '<p class="heroSub">Select supports, choose frequency, then generate and refine a blurb.</p>' +
+      "</div></header>";
+
+    var customBox = "";
+    if (state.editMode) {
+      var tierOptions = TIERS.map(function (t) {
+        return '<option value="' + t + '"' + (state.customTier === t ? " selected" : "") + ">" + escapeHtml(tierLabels[t]) + "</option>";
+      }).join("");
+      var domainOptions = CORE_DOMAINS.concat(PARTNER_DOMAINS).map(function (d) {
+        return '<option value="' + d + '"' + (state.customDomain === d ? " selected" : "") + ">" + escapeHtml(d) + "</option>";
+      }).join("");
+
+      customBox = '<div class="customBox"><div class="customTitle">Add custom card</div><div class="customGrid">' +
+        '<div><label class="smallLabel">Tier</label><select class="select" id="customTierSelect">' + tierOptions + "</select></div>" +
+        '<div><label class="smallLabel">Category</label><select class="select" id="customDomainSelect">' + domainOptions + "</select></div>" +
+        '<div class="customTextCol"><label class="smallLabel">Text</label>' +
+        '<input class="textInput" id="customTextInput" placeholder="Write a custom strategy\u2026" value="' + escapeHtml(state.customText) + '"></div>' +
+        '<div class="customBtnCol"><button class="button buttonPrimary" type="button" data-action="add-custom">Add</button></div>' +
+        "</div></div>";
+    }
+
+    var card = '<div class="card" style="margin-top:14px">' +
+      '<div class="inputRow"><label class="label">Enter student name:</label>' +
+      '<input class="textInput" id="studentNameInput" placeholder="e.g., Michelle" value="' + escapeHtml(state.studentName) + '"' + (state.editMode ? " disabled" : "") + "></div>" +
+      '<div class="searchRow"><label class="label">Search strategies:</label>' +
+      '<input class="textInput" id="queryInput" placeholder="Type to filter (e.g., timer, chunked, break card)" value="' + escapeHtml(state.query) + '"></div>' +
+      customBox + "</div>";
+
+    var sectionTitle = '<h2 class="sectionTitle">' + (state.editMode ? "Edit strategies layout" : "Select strategies") + "</h2>";
+
+    var tiersHtml = TIERS.map(function (tier) {
+      var columns = CORE_DOMAINS.map(function (domain) { return renderDomainColumn(tier, domain); }).join("");
+      var summaryClass = "tierSummary tierTealSummary";
+      var openKey = "tier:" + tier;
+      var openAttr = state.openSections[openKey] ? " open" : "";
+      return '<details class="tierDetails" data-open-key="' + openKey + '"' + openAttr + '><summary class="' + summaryClass + '">' + escapeHtml(tierLabels[tier]) + "</summary>" +
+        '<div class="tierBody"><div class="grid3">' + columns + "</div></div></details>";
+    }).join("");
+
+    var partnerColumns = PARTNER_DOMAINS.map(function (domain) { return renderDomainColumn("Tier 2", domain); }).join("");
+    var partnerOpenAttr = state.openSections["partner"] ? " open" : "";
+    var partnerSection = '<details class="tierDetails" data-open-key="partner"' + partnerOpenAttr + '><summary class="tierSummary teacherAideSummary">Learning Partners (Optional)</summary>' +
+      '<div class="tierBody"><div class="grid2">' + partnerColumns + "</div></div></details>";
+
+    var charLen = state.blurbDraft.length;
+    var charWarningVisible = charLen > 200;
+    var outputSection = '<section class="outputCard" id="outputSection">' +
+      '<div class="outputHeader"><h3 class="outputTitle">Generated Blurb</h3></div>' +
+      '<div class="outputBody"><textarea class="outputArea" id="blurbTextarea" placeholder="Generate will appear here\u2026">' + escapeHtml(state.blurbDraft) + "</textarea>" +
+      '<div class="charWarning" id="charWarning" style="display:' + (charWarningVisible ? "block" : "none") + '">Note is ' + charLen + " characters \u2014 you may want to shorten it.</div>" +
+      "</div></section>";
+
+    var stickyBar = "";
+    if (!state.editMode) {
+      var missing = missingFrequencyCount();
+      var needsPill = missing > 0 ? '<span class="needsPill">' + missing + " need frequency</span>" : "";
+      stickyBar = '<div class="stickyBar"><div class="stickyInner">' +
+        '<div class="stickyLeft"><div class="countPill"><span>' + selectedCount() + " selected</span>" + needsPill + "</div></div>" +
+        '<div class="stickyActions">' +
+        '<button class="button buttonPrimary" type="button" data-action="generate">Generate</button>' +
+        '<button class="button buttonAccent" type="button" data-action="copy">Copy</button>' +
+        '<button class="button buttonGhost" type="button" data-action="clear">Clear form</button>' +
+        "</div></div></div>";
+    }
+
+    return '<div class="container">' + header + card + sectionTitle + tiersHtml + partnerSection + outputSection + "</div>" + stickyBar;
+  }
+
+  var root = document.getElementById("root");
+
+  function render() {
+    var active = document.activeElement;
+    var activeId = null, selStart = null, selEnd = null;
+    if (active && active.id && root.contains(active)) {
+      activeId = active.id;
+      if ("selectionStart" in active) {
+        selStart = active.selectionStart;
+        selEnd = active.selectionEnd;
+      }
+    }
+
+    // Snapshot which <details> sections are open before we wipe the DOM,
+    // so re-rendering (e.g. after ticking a checkbox) doesn't collapse them.
+    var openEls = root.querySelectorAll("[data-open-key]");
+    for (var i = 0; i < openEls.length; i++) {
+      state.openSections[openEls[i].getAttribute("data-open-key")] = openEls[i].open;
+    }
+
+    root.innerHTML = buildAppHTML();
+
+    if (activeId) {
+      var el = document.getElementById(activeId);
+      if (el) {
+        el.focus();
+        if (selStart != null && el.setSelectionRange) {
+          try { el.setSelectionRange(selStart, selEnd); } catch (e) {}
+        }
+      }
+    }
+  }
+
+  /* ============================ EVENT DELEGATION ============================ */
+
+  root.addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-action]");
+    if (!btn) return;
+    var action = btn.getAttribute("data-action");
+    var id = btn.getAttribute("data-id");
+    var tier = btn.getAttribute("data-tier");
+    var domain = btn.getAttribute("data-domain");
+
+    switch (action) {
+      case "edit-toggle": setEditMode(true); break;
+      case "edit-off": setEditMode(false); break;
+      case "store": storeNow(); break;
+      case "reset": resetToDefault(); break;
+      case "add-custom": addCustomCard(); break;
+      case "generate": onGenerate(); break;
+      case "copy": copyBlurb(); break;
+      case "clear": clearForm(); break;
+      case "move-up": moveInOrder(tier, domain, id, "up"); break;
+      case "move-down": moveInOrder(tier, domain, id, "down"); break;
+      case "edit-card": editCustomCard(id); break;
+      case "delete-card": deleteCustomCard(id); break;
+      case "hide": hideStrategy(tier, domain, id); break;
+      case "restore": restoreStrategy(tier, domain, id); break;
+    }
+  });
+
+  root.addEventListener("change", function (e) {
+    var t = e.target;
+    if (t.matches('[data-action="toggle"]')) {
+      toggleStrategy(t.getAttribute("data-id"), t.checked);
+    } else if (t.matches('[data-action="set-freq"]')) {
+      setFrequency(t.getAttribute("data-id"), t.value);
+    } else if (t.id === "customTierSelect") {
+      state.customTier = t.value;
+    } else if (t.id === "customDomainSelect") {
+      state.customDomain = t.value;
+    }
+  });
+
+  root.addEventListener("input", function (e) {
+    var t = e.target;
+    if (t.id === "studentNameInput") {
+      state.studentName = t.value;
+    } else if (t.id === "customTextInput") {
+      state.customText = t.value;
+    } else if (t.id === "blurbTextarea") {
+      state.blurbDraft = t.value;
+      var warnEl = document.getElementById("charWarning");
+      if (warnEl) {
+        var len = t.value.length;
+        if (len > 200) {
+          warnEl.style.display = "block";
+          warnEl.textContent = "Note is " + len + " characters \u2014 you may want to shorten it.";
+        } else {
+          warnEl.style.display = "none";
+        }
+      }
+    } else if (t.id === "queryInput") {
+      state.query = t.value;
+      render();
+    }
+  });
+
+  /* ============================ INIT ============================ */
+
+  render();
+})();
+</script>
+</body>
+</html>
