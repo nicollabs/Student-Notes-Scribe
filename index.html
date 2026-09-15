@@ -1239,7 +1239,7 @@ body {
       '<div class="tierBody"><div class="grid2">' + partnerColumns + "</div></div></details>";
 
     var charLen = state.blurbDraft.length;
-    var charWarningVisible = charLen > 200;
+    var charWarningVisible = charLen > 1000;
     var outputSection = '<section class="outputCard" id="outputSection">' +
       '<div class="outputHeader"><h3 class="outputTitle">Generated Blurb</h3></div>' +
       '<div class="outputBody"><textarea class="outputArea" id="blurbTextarea" placeholder="Generate will appear here\u2026">' + escapeHtml(state.blurbDraft) + "</textarea>" +
@@ -1347,7 +1347,7 @@ body {
       var warnEl = document.getElementById("charWarning");
       if (warnEl) {
         var len = t.value.length;
-        if (len > 200) {
+        if (len > 1000) {
           warnEl.style.display = "block";
           warnEl.textContent = "Note is " + len + " characters \u2014 you may want to shorten it.";
         } else {
