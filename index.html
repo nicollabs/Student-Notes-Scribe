@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!-- Content Security Policy -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; img-src 'none'; form-action 'none'; base-uri 'none'" />
 <meta name="description" content="A free, rules-based browser tool for scribing student notes, based on various strategies (e.g. UDL, PBL, etc.) runs entirely in your browser (no connection to a server, no AI)." />
 <meta name="google-site-verification" content="RfPbKTvRDF4xOeZ14_r6pT6yCXw7A5f-0ZYqoNcJ92k" />
 <title>Student Notes Scribe</title>
@@ -37,7 +39,7 @@ body {
   padding: 26px 18px 130px;
 }
 
-/* HERO */
+/* Hero */
 .hero {
   border-radius: 18px;
   overflow: hidden;
@@ -196,6 +198,14 @@ body {
   align-items: end;
 }
 
+.customBox .helperText {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+  font-weight: 400;
+}
+
 @media (max-width: 920px) {
   .customGrid {
     grid-template-columns: 1fr;
@@ -252,7 +262,7 @@ body {
   content: "▴";
 }
 
-.tierTealSummary {
+.tierNavySummary {
   background: var(--app-navy-light);
   color: #ffffff;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
@@ -602,7 +612,7 @@ body {
 (function () {
   "use strict";
 
-  /* ============================ DATA ============================ */
+  /* Data */
 
   var frequencies = [
     "Multiple times per lesson",
@@ -613,12 +623,20 @@ body {
     "Once per term",
     "When dysregulated",
     "As needed",
-    "At the start of a term"
+    "At the start of each term"
   ];
 
   var TIERS = ["Tier 1", "Tier 2", "Tier 3"];
   var CORE_DOMAINS = ["Engagement", "Learning", "Wellbeing"];
   var PARTNER_DOMAINS = ["Teacher Aide Support", "Collaborative Teaching Support"];
+  var ALL_DOMAINS = CORE_DOMAINS.concat(PARTNER_DOMAINS);
+
+  // Learning Partner cards are always shown under Tier 2.
+  var PARTNER_TIER = "Tier 2";
+
+  var CUSTOM_TEXT_MAX = 500;
+  var CHAR_WARNING_LIMIT = 1000;
+  var STORAGE_KEY = "student_notes_scribe_prefs_v1";
 
   var tierLabels = {
     "Tier 1": "Tier 1 (Universal - 80%)",
@@ -714,18 +732,75 @@ body {
     { id: "ct_team_teaching", tier: "Tier 2", domain: "Collaborative Teaching Support", text: "team teaching", optional: true }
   ];
 
-  /* ============================ STORAGE ============================ */
+  /* Utilities */
 
-  var STORAGE_KEY = "student_notes_scribe_prefs_v1";
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  // Short alias used for every value placed inside an HTML attribute.
+  var attr = escapeHtml;
+
+  function joinWithCommasAnd(items) {
+    if (items.length === 0) return "";
+    if (items.length === 1) return items[0];
+    if (items.length === 2) return items[0] + " and " + items[1];
+    return items.slice(0, -1).join(", ") + ", and " + items[items.length - 1];
+  }
+
+  function makeBucketKey(tier, domain) { return tier + "|" + domain; }
+
+  function isCustomId(id) { return id.indexOf("c_") === 0; }
+
+  /* Storage */
 
   function hasLocalStorage() {
     try { return typeof localStorage !== "undefined"; } catch (e) { return false; }
   }
 
-  function makeBucketKey(tier, domain) { return tier + "|" + domain; }
+  // Every legitimate tier|domain combination. Anything else in storage is ignored.
+  var VALID_BUCKETS = [];
+  TIERS.forEach(function (t) {
+    ALL_DOMAINS.forEach(function (d) { VALID_BUCKETS.push(makeBucketKey(t, d)); });
+  });
 
   function defaultPrefs() {
     return { version: 1, hidden: {}, order: {}, custom: [], updatedAt: Date.now() };
+  }
+
+  /* Validation of saved data */
+
+  function isSafeId(id) {
+    return typeof id === "string" && /^[A-Za-z0-9_]{1,80}$/.test(id);
+  }
+
+  function isValidCustomCard(c) {
+    return !!c && typeof c === "object" &&
+      typeof c.id === "string" && /^c_\d{1,20}$/.test(c.id) &&
+      TIERS.indexOf(c.tier) !== -1 &&
+      ALL_DOMAINS.indexOf(c.domain) !== -1 &&
+      typeof c.text === "string" &&
+      c.text.trim().length > 0 &&
+      c.text.length <= CUSTOM_TEXT_MAX;
+  }
+
+  function sanitiseCustomCard(c) {
+    // Learning Partner cards only display under Tier 2, so keep them there.
+    var tier = PARTNER_DOMAINS.indexOf(c.domain) !== -1 ? PARTNER_TIER : c.tier;
+    return { id: c.id, tier: tier, domain: c.domain, text: c.text.trim(), optional: true };
+  }
+
+  function sanitiseIdMap(obj) {
+    var out = {};
+    if (!obj || typeof obj !== "object" || Array.isArray(obj)) return out;
+    Object.keys(obj).forEach(function (key) {
+      if (VALID_BUCKETS.indexOf(key) === -1) return;
+      if (!Array.isArray(obj[key])) return;
+      out[key] = obj[key].filter(isSafeId);
+    });
+    return out;
   }
 
   function coercePrefs(raw) {
@@ -733,9 +808,9 @@ body {
     if (raw.version !== 1) return defaultPrefs();
     return {
       version: 1,
-      hidden: raw.hidden && typeof raw.hidden === "object" ? raw.hidden : {},
-      order: raw.order && typeof raw.order === "object" ? raw.order : {},
-      custom: Array.isArray(raw.custom) ? raw.custom : [],
+      hidden: sanitiseIdMap(raw.hidden),
+      order: sanitiseIdMap(raw.order),
+      custom: Array.isArray(raw.custom) ? raw.custom.filter(isValidCustomCard).map(sanitiseCustomCard) : [],
       updatedAt: typeof raw.updatedAt === "number" ? raw.updatedAt : Date.now()
     };
   }
@@ -751,10 +826,18 @@ body {
     }
   }
 
+  // Tracks whether the most recent save actually reached browser storage
+  // (it can fail if storage is full, blocked by settings, or in some private modes).
+  var lastSaveOk = true;
+
   function savePrefs(prefs) {
     var next = Object.assign({}, prefs, { updatedAt: Date.now() });
+    lastSaveOk = false;
     if (hasLocalStorage()) {
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch (e) {}
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        lastSaveOk = true;
+      } catch (e) {}
     }
     return next;
   }
@@ -764,14 +847,7 @@ body {
     try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
   }
 
-  /* ============================ BLURB GENERATION ============================ */
-
-  function joinWithCommasAnd(items) {
-    if (items.length === 0) return "";
-    if (items.length === 1) return items[0];
-    if (items.length === 2) return items[0] + " and " + items[1];
-    return items.slice(0, -1).join(", ") + ", and " + items[items.length - 1];
-  }
+  /* Blurb generation */
 
   function hasChosenFrequency(v) { return typeof v === "string" && v.length > 0; }
 
@@ -822,7 +898,7 @@ body {
     return parts.join(" ");
   }
 
-  /* ============================ STATE ============================ */
+  /* State */
 
   var state = {
     studentName: "",
@@ -837,27 +913,24 @@ body {
     openSections: { "tier:Tier 1": true }
   };
 
-  var CHAR_WARNING_LIMIT = 1000;
+  var saveWarningShown = false;
+
+  function updatePrefs(newPrefs) {
+    state.prefs = savePrefs(newPrefs);
+    // Warn once per session if layout changes can't be saved on this device.
+    if (!lastSaveOk && !saveWarningShown) {
+      saveWarningShown = true;
+      alert("Your layout changes couldn't be saved on this device. They'll work for now but will be lost when you close the page.");
+    }
+  }
+
+  /* Derived helpers */
 
   function isSearching() { return state.query.trim().length > 0; }
 
   function allStrategies() {
     return strategies.concat(state.prefs.custom || []);
   }
-
-  function updatePrefs(newPrefs) {
-    state.prefs = savePrefs(newPrefs);
-  }
-
-  function isCustomId(id) { return id.indexOf("c_") === 0; }
-
-  function escapeHtml(str) {
-    return String(str).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
-
-  /* ============================ DERIVED HELPERS ============================ */
 
   function getHiddenSet(bucket) {
     return new Set(state.prefs.hidden[bucket] || []);
@@ -905,7 +978,7 @@ body {
     return Object.keys(state.selected).filter(function (k) { return state.selected[k] === ""; }).length;
   }
 
-  /* ============================ ACTIONS ============================ */
+  /* Actions */
 
   function setEditMode(v) { state.editMode = v; render(); }
 
@@ -917,6 +990,8 @@ body {
   }
 
   function setFrequency(id, freq) {
+    // Only accept frequencies from the official list.
+    if (freq !== "" && frequencies.indexOf(freq) === -1) return;
     state.selected = Object.assign({}, state.selected);
     state.selected[id] = freq;
     render();
@@ -934,8 +1009,8 @@ body {
   }
 
   function onGenerate() {
-    var name = state.studentName.trim();
-    if (!name) { alert("Please enter a student name."); return; }
+    // Name is optional: leaving it blank produces "the student's ... their ..."
+    var name = state.studentName.trim() || "the student";
 
     var missing = missingFrequencyCount();
     if (missing > 0) {
@@ -958,22 +1033,34 @@ body {
     document.body.appendChild(ta);
     ta.focus();
     ta.select();
-    try { document.execCommand("copy"); } catch (e) {}
+    var ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) {}
     document.body.removeChild(ta);
+    return ok;
+  }
+
+  // After copying, offer to clear the form so one student's strategies
+  // aren't accidentally carried into the next student's note.
+  function afterCopy(ok) {
+    if (!ok) {
+      alert("Copy didn't work in this browser. Please select the text in the box and copy it manually.");
+      return;
+    }
+    if (confirm("Copied to clipboard.\n\nClear the form for the next student?")) {
+      clearForm();
+    }
   }
 
   function copyBlurb() {
-    if (!state.blurbDraft) return;
+    if (!state.blurbDraft) { alert("Generate a blurb first."); return; }
     if (navigator.clipboard && window.isSecureContext) {
       navigator.clipboard.writeText(state.blurbDraft).then(function () {
-        alert("Copied to clipboard.");
+        afterCopy(true);
       }).catch(function () {
-        fallbackCopyText(state.blurbDraft);
-        alert("Copied to clipboard.");
+        afterCopy(fallbackCopyText(state.blurbDraft));
       });
     } else {
-      fallbackCopyText(state.blurbDraft);
-      alert("Copied to clipboard.");
+      afterCopy(fallbackCopyText(state.blurbDraft));
     }
   }
 
@@ -1050,10 +1137,15 @@ body {
   function addCustomCard() {
     var text = state.customText.trim();
     if (!text) { alert("Please enter text for the custom card."); return; }
+    if (text.length > CUSTOM_TEXT_MAX) { alert("Custom cards can be up to " + CUSTOM_TEXT_MAX + " characters."); return; }
+    if (TIERS.indexOf(state.customTier) === -1 || ALL_DOMAINS.indexOf(state.customDomain) === -1) return;
+
+    // Learning Partner cards only display under Tier 2.
+    var tier = PARTNER_DOMAINS.indexOf(state.customDomain) !== -1 ? PARTNER_TIER : state.customTier;
 
     var id = "c_" + Date.now();
-    var newCard = { id: id, tier: state.customTier, domain: state.customDomain, text: text, optional: true };
-    var bucket = makeBucketKey(state.customTier, state.customDomain);
+    var newCard = { id: id, tier: tier, domain: state.customDomain, text: text, optional: true };
+    var bucket = makeBucketKey(tier, state.customDomain);
 
     var nextCustom = (state.prefs.custom || []).concat([newCard]);
     var nextOrder = Object.assign({}, state.prefs.order);
@@ -1073,6 +1165,7 @@ body {
 
     var trimmed = nextText.trim();
     if (!trimmed) { alert("Text cannot be empty."); return; }
+    if (trimmed.length > CUSTOM_TEXT_MAX) { alert("Custom cards can be up to " + CUSTOM_TEXT_MAX + " characters."); return; }
 
     var nextCustom = state.prefs.custom.map(function (c) {
       return c.id === cardId ? Object.assign({}, c, { text: trimmed }) : c;
@@ -1107,8 +1200,12 @@ body {
   }
 
   function storeNow() {
-    updatePrefs(state.prefs);
-    alert("Saved.");
+    state.prefs = savePrefs(state.prefs);
+    if (lastSaveOk) {
+      alert("Saved.");
+    } else {
+      alert("Couldn't save on this device. Your browser may be blocking storage or it may be full. Your changes will be lost when you close the page.");
+    }
   }
 
   function resetToDefault() {
@@ -1125,41 +1222,43 @@ body {
     scrollToTop();
   }
 
-  /* ============================ RENDERING ============================ */
+  /* Rendering */
 
   function renderStrategyCard(s, tier, domain) {
     var choice = state.selected[s.id];
     var isChecked = choice !== null && choice !== undefined;
     var needsFreq = isChecked && choice === "";
-    var showMoveControls = domain === "Engagement" || domain === "Learning" || domain === "Wellbeing";
+    var showMoveControls = CORE_DOMAINS.indexOf(domain) !== -1;
     var isCustom = isCustomId(s.id);
+
+    var idA = attr(s.id), tierA = attr(tier), domainA = attr(domain);
 
     var editRail = "";
     if (state.editMode) {
       var moveButtons = showMoveControls
-        ? '<button class="editIcon" type="button" title="Move up" data-action="move-up" data-id="' + s.id + '" data-tier="' + tier + '" data-domain="' + domain + '">\u2191</button>' +
-          '<button class="editIcon" type="button" title="Move down" data-action="move-down" data-id="' + s.id + '" data-tier="' + tier + '" data-domain="' + domain + '">\u2193</button>'
+        ? '<button class="editIcon" type="button" title="Move up" data-action="move-up" data-id="' + idA + '" data-tier="' + tierA + '" data-domain="' + domainA + '">\u2191</button>' +
+          '<button class="editIcon" type="button" title="Move down" data-action="move-down" data-id="' + idA + '" data-tier="' + tierA + '" data-domain="' + domainA + '">\u2193</button>'
         : "";
       var customButtons = isCustom
-        ? '<button class="editIcon" type="button" title="Edit" data-action="edit-card" data-id="' + s.id + '">\u270E</button>' +
-          '<button class="editIcon editIconDanger" type="button" title="Delete" data-action="delete-card" data-id="' + s.id + '">\uD83D\uDDD1</button>'
+        ? '<button class="editIcon" type="button" title="Edit" data-action="edit-card" data-id="' + idA + '">\u270E</button>' +
+          '<button class="editIcon editIconDanger" type="button" title="Delete" data-action="delete-card" data-id="' + idA + '">\uD83D\uDDD1</button>'
         : "";
       editRail = '<div class="editRailHorizontal">' + moveButtons + customButtons +
-        '<button class="editIcon editIconDanger" type="button" title="Hide" data-action="hide" data-id="' + s.id + '" data-tier="' + tier + '" data-domain="' + domain + '">\u2715</button>' +
+        '<button class="editIcon editIconDanger" type="button" title="Hide" data-action="hide" data-id="' + idA + '" data-tier="' + tierA + '" data-domain="' + domainA + '">\u2715</button>' +
         '</div>';
     }
 
     var checkboxHtml = !state.editMode
-      ? '<input class="checkbox" type="checkbox" id="chk-' + s.id + '" data-action="toggle" data-id="' + s.id + '"' + (isChecked ? " checked" : "") + ">"
+      ? '<input class="checkbox" type="checkbox" id="chk-' + idA + '" data-action="toggle" data-id="' + idA + '"' + (isChecked ? " checked" : "") + ">"
       : "";
 
     var freqBlock = "";
     if (!state.editMode && isChecked) {
       var options = '<option value="">Select frequency\u2026</option>' + frequencies.map(function (f) {
-        return '<option value="' + escapeHtml(f) + '"' + (choice === f ? " selected" : "") + ">" + escapeHtml(f) + "</option>";
+        return '<option value="' + attr(f) + '"' + (choice === f ? " selected" : "") + ">" + escapeHtml(f) + "</option>";
       }).join("");
-      freqBlock = '<div class="freqBlock"><label class="freqLabel">Frequency</label>' +
-        '<select class="select' + (needsFreq ? " selectNeeds" : "") + '" id="freq-' + s.id + '" data-action="set-freq" data-id="' + s.id + '">' + options + "</select></div>";
+      freqBlock = '<div class="freqBlock"><label class="freqLabel" for="freq-' + idA + '">Frequency</label>' +
+        '<select class="select' + (needsFreq ? " selectNeeds" : "") + '" id="freq-' + idA + '" data-action="set-freq" data-id="' + idA + '">' + options + "</select></div>";
     }
 
     return '<div class="strategyItem' + (!state.editMode && isChecked ? " strategyItemChecked" : "") + '">' +
@@ -1172,10 +1271,10 @@ body {
     if (!state.editMode || hidden.length === 0) return "";
     var rows = hidden.map(function (s) {
       return '<div class="hiddenRow"><div class="hiddenText">' + escapeHtml(s.text) + '</div>' +
-        '<button class="button buttonGhost" type="button" data-action="restore" data-id="' + s.id + '" data-tier="' + s.tier + '" data-domain="' + domain + '">Restore</button></div>';
+        '<button class="button buttonGhost" type="button" data-action="restore" data-id="' + attr(s.id) + '" data-tier="' + attr(s.tier) + '" data-domain="' + attr(domain) + '">Restore</button></div>';
     }).join("");
     var openAttr = state.openSections[openKey] ? " open" : "";
-    return '<details class="hiddenDrawer" data-open-key="' + openKey + '"' + openAttr + '><summary class="hiddenSummary">Hidden (' + hidden.length + ')</summary>' +
+    return '<details class="hiddenDrawer" data-open-key="' + attr(openKey) + '"' + openAttr + '><summary class="hiddenSummary">Hidden (' + hidden.length + ')</summary>' +
       '<div class="hiddenList">' + rows + "</div></details>";
   }
 
@@ -1205,41 +1304,44 @@ body {
     var customBox = "";
     if (state.editMode) {
       var tierOptions = TIERS.map(function (t) {
-        return '<option value="' + t + '"' + (state.customTier === t ? " selected" : "") + ">" + escapeHtml(tierLabels[t]) + "</option>";
+        return '<option value="' + attr(t) + '"' + (state.customTier === t ? " selected" : "") + ">" + escapeHtml(tierLabels[t]) + "</option>";
       }).join("");
-      var domainOptions = CORE_DOMAINS.concat(PARTNER_DOMAINS).map(function (d) {
-        return '<option value="' + d + '"' + (state.customDomain === d ? " selected" : "") + ">" + escapeHtml(d) + "</option>";
+      var domainOptions = ALL_DOMAINS.map(function (d) {
+        return '<option value="' + attr(d) + '"' + (state.customDomain === d ? " selected" : "") + ">" + escapeHtml(d) + "</option>";
       }).join("");
 
       customBox = '<div class="customBox"><div class="customTitle">Add custom card</div><div class="customGrid">' +
-        '<div><label class="smallLabel">Tier</label><select class="select" id="customTierSelect">' + tierOptions + "</select></div>" +
-        '<div><label class="smallLabel">Category</label><select class="select" id="customDomainSelect">' + domainOptions + "</select></div>" +
-        '<div class="customTextCol"><label class="smallLabel">Text</label>' +
-        '<input class="textInput" id="customTextInput" placeholder="Write a custom strategy\u2026" value="' + escapeHtml(state.customText) + '"></div>' +
+        '<div><label class="smallLabel" for="customTierSelect">Tier</label><select class="select" id="customTierSelect">' + tierOptions + "</select></div>" +
+        '<div><label class="smallLabel" for="customDomainSelect">Category</label><select class="select" id="customDomainSelect">' + domainOptions + "</select></div>" +
+        '<div class="customTextCol"><label class="smallLabel" for="customTextInput">Text</label>' +
+        '<input class="textInput" id="customTextInput" maxlength="' + CUSTOM_TEXT_MAX + '" placeholder="Write a custom strategy\u2026" value="' + attr(state.customText) + '"></div>' +
         '<div class="customBtnCol"><button class="button buttonPrimary" type="button" data-action="add-custom">Add</button></div>' +
-        "</div></div>";
+        "</div>" +
+        '<p class="helperText">Custom cards are saved on this device. Don\u2019t include student names.</p>' +
+        "</div>";
     }
 
     var card = '<div class="card" style="margin-top:14px">' +
-      '<div class="inputRow"><label class="label">Enter student name:</label>' +
-      '<input class="textInput" id="studentNameInput" placeholder="e.g., Michelle" value="' + escapeHtml(state.studentName) + '"' + (state.editMode ? " disabled" : "") + "></div>" +
-      '<div class="searchRow"><label class="label">Search strategies:</label>' +
-      '<input class="textInput" id="queryInput" placeholder="Type to filter (e.g., timer, chunked, break card)" value="' + escapeHtml(state.query) + '"></div>' +
+      '<div class="inputRow"><label class="label" for="studentNameInput">Enter student name:</label>' +
+      '<input class="textInput" id="studentNameInput" autocomplete="off" placeholder="e.g., Michelle, or leave blank for &quot;the student&quot;" value="' + attr(state.studentName) + '"' + (state.editMode ? " disabled" : "") + ">" +
+      "</div>" +
+      '<div class="searchRow"><label class="label" for="queryInput">Search strategies:</label>' +
+      '<input class="textInput" id="queryInput" autocomplete="off" placeholder="Type to filter (e.g., timer, chunked, break card)" value="' + attr(state.query) + '"></div>' +
       customBox + "</div>";
 
     var sectionTitle = '<h2 class="sectionTitle">' + (state.editMode ? "Edit strategies layout" : "Select strategies") + "</h2>";
 
     var tiersHtml = TIERS.map(function (tier) {
       var columns = CORE_DOMAINS.map(function (domain) { return renderDomainColumn(tier, domain); }).join("");
-      var summaryClass = "tierSummary tierTealSummary";
+      var summaryClass = "tierSummary tierNavySummary";
       var openKey = "tier:" + tier;
       var openAttr = (isSearching() || state.openSections[openKey]) ? " open" : "";
       var forcedAttr = isSearching() ? " data-search-forced" : "";
-      return '<details class="tierDetails" data-open-key="' + openKey + '"' + forcedAttr + openAttr + '><summary class="' + summaryClass + '">' + escapeHtml(tierLabels[tier]) + "</summary>" +
+      return '<details class="tierDetails" data-open-key="' + attr(openKey) + '"' + forcedAttr + openAttr + '><summary class="' + summaryClass + '">' + escapeHtml(tierLabels[tier]) + "</summary>" +
         '<div class="tierBody"><div class="grid3">' + columns + "</div></div></details>";
     }).join("");
 
-    var partnerColumns = PARTNER_DOMAINS.map(function (domain) { return renderDomainColumn("Tier 2", domain); }).join("");
+    var partnerColumns = PARTNER_DOMAINS.map(function (domain) { return renderDomainColumn(PARTNER_TIER, domain); }).join("");
     var partnerOpenAttr = (isSearching() || state.openSections["partner"]) ? " open" : "";
     var partnerForcedAttr = isSearching() ? " data-search-forced" : "";
     var partnerSection = '<details class="tierDetails" data-open-key="partner"' + partnerForcedAttr + partnerOpenAttr + '><summary class="tierSummary teacherAideSummary">Learning Partners (Optional)</summary>' +
@@ -1249,7 +1351,8 @@ body {
     var charWarningVisible = charLen > CHAR_WARNING_LIMIT;
     var outputSection = '<section class="outputCard" id="outputSection">' +
       '<div class="outputHeader"><h3 class="outputTitle">Generated Blurb</h3></div>' +
-      '<div class="outputBody"><textarea class="outputArea" id="blurbTextarea" placeholder="Generate will appear here\u2026">' + escapeHtml(state.blurbDraft) + "</textarea>" +
+      '<div class="outputBody">' +
+      '<textarea class="outputArea" id="blurbTextarea" aria-label="Generated blurb" placeholder="Generate will appear here\u2026">' + escapeHtml(state.blurbDraft) + "</textarea>" +
       '<div class="charWarning" id="charWarning" style="display:' + (charWarningVisible ? "block" : "none") + '">Note is ' + charLen + " characters \u2014 you may want to shorten it.</div>" +
       "</div></section>";
 
@@ -1277,8 +1380,10 @@ body {
     if (active && active.id && root.contains(active)) {
       activeId = active.id;
       if ("selectionStart" in active) {
-        selStart = active.selectionStart;
-        selEnd = active.selectionEnd;
+        try {
+          selStart = active.selectionStart;
+          selEnd = active.selectionEnd;
+        } catch (e) {}
       }
     }
 
@@ -1303,7 +1408,7 @@ body {
     }
   }
 
-  /* ============================ EVENT DELEGATION ============================ */
+  /* Event delegation */
 
   root.addEventListener("click", function (e) {
     var btn = e.target.closest("[data-action]");
@@ -1368,7 +1473,7 @@ body {
     }
   });
 
-  /* ============================ INIT ============================ */
+  /* Init */
 
   render();
 })();
