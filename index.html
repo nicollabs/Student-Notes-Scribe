@@ -12,7 +12,7 @@
 :root {
   --app-navy: #13294B;
   --app-navy-light: #2F4C7C;
-  --app-red: #F04850;
+  --app-red: #D42F38;
 
   --ink: #0b0d17;
   --muted: #50556b;
@@ -351,7 +351,7 @@ body {
 }
 
 .editIconDanger {
-  border-color: rgba(240, 72, 80, 0.45);
+  border-color: rgba(212, 47, 56, 0.45);
 }
 
 .strategyMain {
@@ -409,8 +409,8 @@ body {
 }
 
 .selectNeeds {
-  border-color: rgba(240, 72, 80, 0.85);
-  box-shadow: 0 0 0 4px rgba(240, 72, 80, 0.1);
+  border-color: rgba(212, 47, 56, 0.85);
+  box-shadow: 0 0 0 4px rgba(212, 47, 56, 0.1);
 }
 
 /* Hidden drawer */
@@ -480,7 +480,7 @@ body {
 
 .buttonAccent {
   background: var(--app-red);
-  border-color: rgba(240, 72, 80, 0.55);
+  border-color: rgba(212, 47, 56, 0.55);
   color: white;
 }
 
@@ -543,6 +543,14 @@ body {
   line-height: 1.3;
   color: var(--app-red);
   font-weight: 600;
+}
+
+/* Footer */
+.appFooter {
+  margin-top: 18px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
 }
 
 /* Notices */
@@ -689,8 +697,8 @@ body {
   align-items: center;
   padding: 4px 8px;
   border-radius: 999px;
-  background: rgba(240, 72, 80, 0.1);
-  border: 1px solid rgba(240, 72, 80, 0.28);
+  background: rgba(212, 47, 56, 0.1);
+  border: 1px solid rgba(212, 47, 56, 0.28);
   color: #8b1f26;
   font-weight: 600;
   font-size: 12px;
@@ -749,6 +757,8 @@ body {
 
   // Learning Partner cards are always shown under Tier 2.
   var PARTNER_TIER = "Tier 2";
+
+  var APP_VERSION = "1.0";
 
   var CUSTOM_TEXT_MAX = 500;
   var CHAR_WARNING_LIMIT = 1000;
@@ -1144,6 +1154,7 @@ body {
     studentName: "",
     selected: {},
     blurbDraft: "",
+    blurbCopied: false,
     query: "",
     editMode: false,
     prefs: loadPrefs(),
@@ -1176,17 +1187,11 @@ body {
     return new Set(state.prefs.hidden[bucket] || []);
   }
 
-  function orderedVisibleStrategies(tier, domain) {
-    var bucket = makeBucketKey(tier, domain);
-    var hidden = getHiddenSet(bucket);
-    var q = state.query.trim().toLowerCase();
-
-    var candidates = allStrategies().filter(function (s) {
-      return s.tier === tier && s.domain === domain && !hidden.has(s.id) && (!q || s.text.toLowerCase().indexOf(q) !== -1);
-    });
-
+  // Every strategy in a tier/domain bucket, in the teacher's saved order.
+  function orderedBucket(tier, domain) {
+    var candidates = allStrategies().filter(function (s) { return s.tier === tier && s.domain === domain; });
     var byId = new Map(candidates.map(function (s) { return [s.id, s]; }));
-    var order = state.prefs.order[bucket] || [];
+    var order = state.prefs.order[makeBucketKey(tier, domain)] || [];
     var result = [];
 
     order.forEach(function (id) {
@@ -1196,6 +1201,25 @@ body {
     byId.forEach(function (item) { result.push(item); });
 
     return result;
+  }
+
+  function orderedVisibleStrategies(tier, domain) {
+    var hidden = getHiddenSet(makeBucketKey(tier, domain));
+    var q = state.query.trim().toLowerCase();
+    return orderedBucket(tier, domain).filter(function (s) {
+      return !hidden.has(s.id) && (!q || s.text.toLowerCase().indexOf(q) !== -1);
+    });
+  }
+
+  // All strategies in the order they appear on screen (ignoring search),
+  // so the blurb follows the teacher's layout.
+  function strategiesInScreenOrder() {
+    var list = [];
+    TIERS.forEach(function (tier) {
+      CORE_DOMAINS.forEach(function (domain) { list = list.concat(orderedBucket(tier, domain)); });
+    });
+    PARTNER_DOMAINS.forEach(function (domain) { list = list.concat(orderedBucket(PARTNER_TIER, domain)); });
+    return list;
   }
 
   function hiddenStrategies(tier, domain) {
@@ -1260,7 +1284,8 @@ body {
 
     if (selectedCount() === 0) { showToast("Select at least one strategy first.", { error: true }); return; }
 
-    state.blurbDraft = generateBlurb(name, allStrategies(), state.selected);
+    state.blurbDraft = generateBlurb(name, strategiesInScreenOrder(), state.selected);
+    state.blurbCopied = false;
     render();
     scrollToOutput();
   }
@@ -1286,6 +1311,7 @@ body {
       showToast("Copy didn't work in this browser. Select the text in the box and copy it manually.", { error: true });
       return;
     }
+    state.blurbCopied = true;
     showToast("Copied to clipboard.", { actionLabel: "Clear for next student", onAction: clearForm });
   }
 
@@ -1469,6 +1495,7 @@ body {
     var payload = {
       app: EXPORT_APP_ID,
       version: 1,
+      appVersion: APP_VERSION,
       exportedAt: new Date().toISOString(),
       prefs: {
         version: 1,
@@ -1697,7 +1724,9 @@ body {
         "</div></div></div>";
     }
 
-    return '<div class="container">' + header + card + sectionTitle + tiersHtml + partnerSection + outputSection + "</div>" + stickyBar;
+    var footer = '<footer class="appFooter">Student Notes Scribe v' + escapeHtml(APP_VERSION) + "</footer>";
+
+    return '<div class="container">' + header + card + sectionTitle + tiersHtml + partnerSection + outputSection + footer + "</div>" + stickyBar;
   }
 
   var root = document.getElementById("root");
@@ -1786,6 +1815,7 @@ body {
       state.customText = t.value;
     } else if (t.id === "blurbTextarea") {
       state.blurbDraft = t.value;
+      state.blurbCopied = false;
       var warnEl = document.getElementById("charWarning");
       if (warnEl) {
         var len = t.value.length;
@@ -1820,6 +1850,15 @@ body {
     if (e.key === "Enter") { e.preventDefault(); closeDialog(dialogInputEl.value); }
   });
 
+  // Warn before leaving if a blurb was generated or edited but not copied.
+  // Nothing is saved; this only triggers the browser's own "Leave site?" prompt.
+  window.addEventListener("beforeunload", function (e) {
+    if (state.blurbDraft.trim() && !state.blurbCopied) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+  });
+
   // Import
   document.getElementById("importFile").addEventListener("change", function (e) {
     handleImportFile(e.target.files && e.target.files[0]);
@@ -1831,4 +1870,13 @@ body {
 })();
 </script>
 </body>
+<!--
+  Student Notes Scribe
+
+  Author
+  Designed and engineered by Daniel Nicol, implemented agentically with Claude (Anthropic).
+
+  Licence
+  To be confirmed.
+-->
 </html>
